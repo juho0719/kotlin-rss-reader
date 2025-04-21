@@ -10,5 +10,5 @@ fun main() {
     val hmgXml = rssReaderService.getXml(hmg)
     val posts = RssReaderService().createPost(listOf(kurlyXml, hmgXml))
 
-    println(posts.size)
+    println(posts)
 }

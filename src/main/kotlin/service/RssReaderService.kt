@@ -5,13 +5,9 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import util.rssReader
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.OffsetTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.util.*
 
 class RssReaderService() {
     fun getXml(url: String): Document {
@@ -26,13 +22,23 @@ class RssReaderService() {
         }
         return list
     }
+
+    fun sort(keyword: String?, posts: List<Post>): List<Post> {
+        if (keyword.isNullOrBlank()) {
+            return posts.sortedByDescending { it.pubDate }
+                        .take(10)
+        }
+        return posts.filter { it.title.contains(keyword, ignoreCase = false) }
+                    .sortedByDescending { it.pubDate }
+                    .take(10)
+    }
 }
 
 private fun convertXmlToPost(document: Document): MutableList<Post> {
     val list = mutableListOf<Post>()
     val items = document.getElementsByTagName("item")
     for (i in 0..items.length - 1) {
-        val item = items.item(0)
+        val item = items.item(i)
         val element = item as Element
         val title = element.getElementsByTagName("title").item(0)
         val description = element.getElementsByTagName("description").item(0)

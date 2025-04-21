@@ -9,6 +9,7 @@ fun main() {
     val kurlyXml = rssReaderService.getXml(kurly)
     val hmgXml = rssReaderService.getXml(hmg)
     val posts = RssReaderService().createPost(listOf(kurlyXml, hmgXml))
+    val sortedPosts = rssReaderService.sort(null, posts)
 
-    println(posts)
+    sortedPosts.forEach { println(it) }
 }

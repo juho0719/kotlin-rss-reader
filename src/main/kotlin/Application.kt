@@ -1,4 +1,6 @@
 import service.RssReaderService
+import view.InputView
+import view.OutputView
 
 fun main() {
     val rssReaderService = RssReaderService()
@@ -9,7 +11,10 @@ fun main() {
     val kurlyXml = rssReaderService.getXml(kurly)
     val hmgXml = rssReaderService.getXml(hmg)
     val posts = RssReaderService().createPost(listOf(kurlyXml, hmgXml))
-    val sortedPosts = rssReaderService.sort(null, posts)
 
-    sortedPosts.forEach { println(it) }
+    while (true) {
+        val keyword = InputView.inputKeyword()
+        val sortedPosts = RssReaderService().sort(keyword, posts)
+        OutputView.result(sortedPosts)
+    }
 }

@@ -1,5 +1,7 @@
 package service
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import model.Post
 import org.w3c.dom.Document
 import org.w3c.dom.Element
@@ -10,27 +12,64 @@ import java.time.ZonedDateTime
 import java.util.*
 
 class RssReaderService() {
-    fun getXml(url: String): Document {
-        return rssReader(url)
+    suspend fun getXml(): List<Document> {
+        val kurly = "https://helloworld.kurly.com/feed.xml"
+        val hmg = "https://developers.hyundaimotorgroup.com/blog/rss"
+        val banksalad = "https://blog.banksalad.com/rss.xml"
+
+        var documents: List<Document> = emptyList()
+
+        coroutineScope {
+            val kurlyXml = async {
+                rssReader(kurly)
+            }
+            val hmgXml = async {
+                rssReader(hmg)
+            }
+            val banksaladXml = async {
+                rssReader(banksalad)
+            }
+
+            documents = listOf(kurlyXml.await(), hmgXml.await(), banksaladXml.await())
+        }
+
+        return documents
     }
 
-    fun createPost(xmls: List<Document>): List<Post> {
-        val list = mutableListOf<Post>()
-        xmls.forEach {
-            val posts = convertXmlToPost(it)
-            list.addAll(posts)
+    fun pollRssUpdates(
+        reSearchPosts: MutableList<Post>,
+        posts: MutableList<Post>
+    ): MutableList<Post> {
+        val oldPostsLinks = posts.map { it.link }
+        val newPosts = reSearchPosts.filter { reSearchPost -> !oldPostsLinks.contains(reSearchPost.link) }
+
+        if (newPosts.isNotEmpty()) {
+            println("새로운 글이 등록되었습니다!")
+
+            newPosts.forEach {
+                println("[NEW] ${it.title} (${it.pubDate.toLocalDate()}) - ${it.link}")
+            }
+            posts.addAll(newPosts)
         }
-        return list
+        return posts
+    }
+
+    fun createPost(xmls: List<Document>): MutableList<Post> {
+        return xmls.map {
+            convertXmlToPost(it)
+        }
+            .flatten()
+            .toMutableList()
     }
 
     fun sort(keyword: String?, posts: List<Post>): List<Post> {
         if (keyword.isNullOrBlank()) {
             return posts.sortedByDescending { it.pubDate }
-                        .take(10)
+                .take(10)
         }
         return posts.filter { it.title.contains(keyword, ignoreCase = false) }
-                    .sortedByDescending { it.pubDate }
-                    .take(10)
+            .sortedByDescending { it.pubDate }
+            .take(10)
     }
 }
 
